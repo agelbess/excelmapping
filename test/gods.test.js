@@ -21,7 +21,7 @@ describe('create a list of male Gods in English and in Greek', () => {
                 name: 'Gods in English',
                 jobs: [
                     {load: {path: './test/gods.xlsx'}},
-                    {filterObjects: {sex: {include: ['male']}}},
+                    {filterObjects: [{field: 'sex', include: ['male']}]},
                     {copyTo: 'Male God names'}
                 ]
             },
@@ -29,7 +29,7 @@ describe('create a list of male Gods in English and in Greek', () => {
                 name: 'Gods in Greek',
                 jobs: [
                     {load: {path: './test/gods.xlsx'}},
-                    {filterObjects: {['φύλο']: {include: ['αρσενικό']}}},
+                    {filterObjects: [{field: 'φύλο', include: ['αρσενικό']}]},
                     {mapFields: {['όνομα']: 'name'}},
                     {copyTo: 'Male God names'}
                 ]

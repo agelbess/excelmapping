@@ -138,12 +138,7 @@ describe('test cloneObjects', () => {
         const config = {
             name: 'in3',
             jobs: [{
-                cloneObjects: {
-                    f1: {
-                        filter: ['in3-o1-f1', 'in3-o4-f1'],
-                        values: ['clone1', 'clone2']
-                    }
-                }
+                cloneObjects: {field: 'f1', filter: ['in3-o1-f1', 'in3-o4-f1'], values: ['clone1', 'clone2']}
             }]
         }
         let collections = newCollections()
@@ -157,14 +152,10 @@ describe('test filterObjects', () => {
         const config = {
             name: 'in3',
             jobs: [{
-                filterObjects: {
-                    f1: {
-                        include: ['in3-o1-f1', 'in3-o4-f1']
-                    },
-                    f2: {
-                        include: ['in3-o1-f2', 'in3-o3-f2']
-                    }
-                }
+                filterObjects: [
+                    {field: 'f1', include: ['in3-o1-f1', 'in3-o4-f1']},
+                    {field: 'f2', include: ['in3-o1-f2', 'in3-o3-f2']}
+                ]
             }]
         }
         let collections = newCollections()
@@ -176,11 +167,9 @@ describe('test filterObjects', () => {
         const config = {
             name: 'in3',
             jobs: [{
-                filterObjects: {
-                    f1: {
-                        exclude: ['in3-o1-f1', 'in3-o4-f1']
-                    }
-                }
+                filterObjects: [
+                    {field: 'f1', exclude: ['in3-o1-f1', 'in3-o4-f1']}
+                ]
             }]
         }
         let collections = newCollections()

@@ -128,10 +128,9 @@ const copyTo = function (collections, collectionName, config) {
 
 /**
  * cloneObjects: {
- *   f1: {
- *     filter: ['in1-o1-f1'], // only the objects with f1 in filter
- *     values: ['in1-o1-f1-clone1', 'in1-o1-f1-clone2'] // clone as many times as the values
- *   }
+ *   field: 'f1'
+ *   filter: ['in1-o1-f1'], // only the objects with f1 in filter
+ *   values: ['in1-o1-f1-clone1', 'in1-o1-f1-clone2'] // clone as many times as the values
  * }
  */
 const cloneObjects = function (collections, collectionName, config) {
@@ -140,37 +139,31 @@ const cloneObjects = function (collections, collectionName, config) {
     }
     let source = collections[collectionName]
     let newCollection = []
-    for (let field in config) {
-        let filter = config[field].filter
-        let values = config[field].values
-        if (!Array.isArray(filter)) {
-            throw sprintf('map.config.%s.cloneObjects.%s.filter is not an array', collectionName, field)
-        }
-        if (!Array.isArray(values)) {
-            throw sprintf('map.config.%s.cloneObjects.%s.values is not an array', collectionName, field)
-        }
-        source.forEach(o => {
-            newCollection.push({...o})
-            if (filter.includes(o[field])) {
-                values.forEach(value => {
-                    let clone = {...o}
-                    clone[field] = value
-                    newCollection.push(clone)
-                })
-            }
-        })
+    if (!Array.isArray(config.values)) {
+        throw sprintf('map.config.%s.cloneObjects.%s.values is not an array', collectionName, config.field)
     }
+    source.forEach(o => {
+        newCollection.push({...o})
+        if (config.filter.includes(o[config.field])) {
+            config.values.forEach(value => {
+                let clone = {...o}
+                clone[config.field] = value
+                newCollection.push(clone)
+            })
+        }
+    })
     collections[collectionName] = newCollection
 }
 
 /**
- * filterObjects: {
- *   f1: {
+ * filterObjects: [
+ *   {
+ *     field: 'f1',
  *     include: ['in1-o1-f1'], // include only the objects with f1 in the filter
  *     ### OR ###
  *     exclude: ['in1-o1-f1'] // remove the objects with f1 in the filter
  *   }
- * }
+ * ]
  */
 
 const filterObjects = function (collections, collectionName, config) {
@@ -181,22 +174,22 @@ const filterObjects = function (collections, collectionName, config) {
     let newCollection = []
     source.forEach(o => {
         let push = true;
-        for (let field in config) {
-            let include = config[field].include
-            let exclude = config[field].exclude
+        config.forEach(filter => {
+            let include = filter.include
+            let exclude = filter.exclude
             if (include && exclude) {
-                throw sprintf('map.config.%s.filterObjects.%s.include and exclude cannot exist together', collectionName, field)
+                throw sprintf('map.config.%s.filterObjects.%s.include and exclude cannot exist together', collectionName, filter.field)
             }
             if (include && !Array.isArray(include)) {
-                throw sprintf('map.config.%s.filterObjects.%s.include is not an array', collectionName, field)
+                throw sprintf('map.config.%s.filterObjects.%s.include is not an array', collectionName, filter.field)
             }
             if (exclude && !Array.isArray(exclude)) {
-                throw sprintf('map.config.%s.filterObjects.%s.exclude is not an array', collectionName, field)
+                throw sprintf('map.config.%s.filterObjects.%s.exclude is not an array', collectionName, filter.field)
             }
             push = push &&
-                ((include && include.includes(o[field])) ||
-                    (exclude && !exclude.includes(o[field])))
-        }
+                ((include && include.includes(o[filter.field])) ||
+                    (exclude && !exclude.includes(o[filter.field])))
+        })
         if (push) {
             newCollection.push({...o})
         }
