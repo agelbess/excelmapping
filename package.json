@@ -1,0 +1,32 @@
+{
+  "name": "excelmapping",
+  "version": "1.0.0",
+  "description": "mapping excel columns to other excel files with transformations and duplications",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agelbess/excelmapping.git"
+  },
+  "keywords": [
+    "excel",
+    "xlsx",
+    "mapping"
+  ],
+  "author": "Alexandros Gelbessis",
+  "license": "ISC",
+  "dependencies": {
+    "sprintf-js": "^1.1.2",
+    "xlsx": "^0.16.6",
+    "yaml": "^1.10.0"
+  },
+  "bugs": {
+    "url": "https://github.com/agelbess/excelmapping/issues"
+  },
+  "homepage": "https://github.com/agelbess/excelmapping#readme",
+  "devDependencies": {
+    "mocha": "^8.1.1"
+  }
+}
