@@ -66,10 +66,10 @@ describe('create a list of male Gods in English and in Greek', () => {
             }
         })
         m.map2xlsx(collections, [
-            {
-                dataName: 'Male God names',
-                path: PATH + '/maleGodNames.xlsx'
-            }
+                {
+                    dataName: 'Male God names',
+                    path: PATH + '/maleGodNames.xlsx'
+                }
             ]
         )
         assert.strictEqual(collections['Male God names'].length, 8 + 8)

@@ -26,6 +26,22 @@ const newCollections = function () {
     }
 }
 
+describe('test load', () => {
+    it('test', () => {
+        const config = {
+            in1: {
+                load: {
+                    path: './test/gods.xlsx',
+                    sheetName: 'Gods in English'
+                }
+            }
+        }
+        let collections = {}
+        m.map(collections, config)
+        assert.strictEqual(collections.in1.length, 14)
+    })
+})
+
 describe('test copyTo', () => {
     it('single collection', () => {
         const config = {
