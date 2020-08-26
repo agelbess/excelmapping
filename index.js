@@ -17,44 +17,52 @@ const sprintf = require('sprintf-js').sprintf
  *     ]
  * }
  * @param config
- * config: {
- *     in1: {
- *         load: ...
- *         copyTo: ...
- *         cloneObjects: ...
- *         filterObjects: ...
- *         mapFields: ...
- *     }
- * }
- *
+ * config: [
+ *   {
+ *     name: 'in1' // the collection name
+ *     jobs: [
+ *       load: ...
+ *       save: ...
+ *       copyTo: ...
+ *       cloneObjects: ...
+ *       filterObjects: ...
+ *       mapFields: ...
+ *     ]
+ *   }
+ * ]
  */
 const map = function (collections, config) {
     if (typeof collections !== 'object' || Array.isArray(collections)) {
         throw 'map.collections is not an object'
     }
-    if (typeof config !== 'object' || Array.isArray(config)) {
-        throw 'map.config is not an object'
-    }
-    for (let collectionName in config) {
-        let collectionConfig = config[collectionName]
-        if (collectionConfig.load) {
-            load(collections, collectionName, collectionConfig.load)
-        }
-        if (collectionConfig.copyTo) {
-            copyTo(collections, collectionName, collectionConfig.copyTo)
-        }
-        if (collectionConfig.cloneObjects) {
-            cloneObjects(collections, collectionName, collectionConfig.cloneObjects)
-        }
-        if (collectionConfig.filterObjects) {
-            filterObjects(collections, collectionName, collectionConfig.filterObjects)
-        }
-        if (collectionConfig.filterFields) {
-            filterFields(collections, collectionName, collectionConfig.filterFields)
-        }
-        if (collectionConfig.mapFields) {
-            mapFields(collections, collectionName, collectionConfig.mapFields)
-        }
+    if (Array.isArray(config)) {
+        config.forEach(c => {
+            map(collections, c)
+        })
+    } else {
+        config.jobs.forEach(job => {
+            if (job.load) {
+                load(collections, config.name, job.load)
+            }
+            if (job.save) {
+                save(collections, config.name, job.save)
+            }
+            if (job.copyTo) {
+                copyTo(collections, config.name, job.copyTo)
+            }
+            if (job.cloneObjects) {
+                cloneObjects(collections, config.name, job.cloneObjects)
+            }
+            if (job.filterObjects) {
+                filterObjects(collections, config.name, job.filterObjects)
+            }
+            if (job.filterFields) {
+                filterFields(collections, config.name, job.filterFields)
+            }
+            if (job.mapFields) {
+                mapFields(collections, config.name, job.mapFields)
+            }
+        })
     }
     return collections
 }
@@ -62,7 +70,7 @@ const map = function (collections, config) {
 /**
  * load: {
  *   path: './file.xlsx',
- *   sheetName: 'Sheet1',
+ *   sheetName: 'Sheet1', // omit to use the collectionName
  *   rangeFrom: if set, override the starting range of the sheet. e.g. 'D4' will start reading from the D4 cell
  *   rangeTo: if set, override the ending range of the sheet. e.g. 'E18' will stop reading after the E18 cell
  * }
@@ -71,11 +79,8 @@ const load = function (collections, collectionName, config) {
     if (!config.path) {
         throw sprintf('map.config.%s.load.path is missing', collectionName)
     }
-    if (!config.sheetName) {
-        throw sprintf('map.config.%s.load.sheetName is missing', collectionName)
-    }
     let xlsx = XLSX.readFile(config.path)
-    let sheet = xlsx.Sheets[config.sheetName]
+    let sheet = xlsx.Sheets[config.sheetName || collectionName]
     // replace range. e.g. for rangeFrom=D4, range A1:E15 would change to D4:E15
     if (config.rangeFrom) {
         sheet['!ref'] = sheet['!ref'].replace(/.*:/, config.rangeFrom + ':')
@@ -84,6 +89,29 @@ const load = function (collections, collectionName, config) {
         sheet['!ref'] = sheet['!ref'].replace(/:.*/, ":" + config.rangeTo)
     }
     collections[collectionName] = XLSX.utils.sheet_to_json(sheet)
+}
+
+/**
+ *
+ * save: {
+ *   path: './out.xlsx',
+ *   sheetName: 'Sheet1' // omit to use the dataName as default
+ * }
+ *
+ */
+const save = function (collections, collectionName, config) {
+    const workbookMap = {}
+    if (!config.path) {
+        throw 'save.path is missing'
+    }
+    if (!collections[collectionName]) {
+        throw sprintf('collections.%s is missing', collectionName)
+    }
+    // get it from the map or create a new one
+    let workbook = workbookMap[config.path] || XLSX.utils.book_new()
+    let worksheet = XLSX.utils.json_to_sheet(collections[collectionName])
+    XLSX.utils.book_append_sheet(workbook, worksheet, config.sheetName || collectionName)
+    XLSX.writeFile(workbook, config.path)
 }
 
 /**
@@ -218,7 +246,7 @@ const filterFields = function (collections, collectionName, config) {
  */
 const mapFields = function (collections, collectionName, config) {
     if (!collections[collectionName]) {
-        throw sprintf('map.data.%s is missing', collectionName)
+        throw sprintf('data.%s is missing', collectionName)
     }
     let source = collections[collectionName]
     for (let mapField in config) {
@@ -233,99 +261,6 @@ const mapFields = function (collections, collectionName, config) {
         })
     }
 }
-/**
- * @param config array of excel files and sheets to form the data map
- * config: [
- *   {
- *     path: the path of the xlsx file
- *     sheets: [
- *       {
- *         sheetName: the sheet to read from
- *         dataName: the name of the collection in the output, omit to have the name of the sheet
- *         rangeFrom: if set, override the starting range of the sheet. e.g. 'D4' will start reading from the D4 cell
- *         rangeTo: if set, override the ending range of the sheet. e.g. 'E18' will stop reading after the E18 cell
- *       }
- *     ]
- *   }
- * ]
- * returns a map with the arrays
- */
-const xlsx2map = function (config) {
-    if (!Array.isArray(config)) {
-        throw 'xlsx2map.config is not an array'
-    }
-    let collections = {}
-    config.forEach(c => {
-        if (!c.path) {
-            throw 'xlsx2map.config.path is missing'
-        }
-        if (!Array.isArray(c.sheets)) {
-            throw 'xlsx2map.config.sheets is missing or not an array'
-        }
-        let xlsx = XLSX.readFile(c.path)
-        c.sheets.forEach(s => {
-            if (!s.sheetName) {
-                throw 'xlsx2map.config.sheets.sheetName is missing'
-            }
-            let sheet = xlsx.Sheets[s.sheetName]
-            // replace range. e.g. for rangeFrom=D4, range A1:E15 would change to D4:E15
-            if (s.rangeFrom) {
-                sheet['!ref'] = sheet['!ref'].replace(/.*:/, s.rangeFrom + ':')
-            }
-            if (s.rangeTo) {
-                sheet['!ref'] = sheet['!ref'].replace(/:.*/, ":" + s.rangeTo)
-            }
-            collections[s.dataName || s.sheetName] = XLSX.utils.sheet_to_json(sheet)
-        })
-    })
-    return collections
-}
 
-/**
- *
- * @param data
- * {
- *   out1: [{f1: 'out1-o1-f1'}, {f1: 'out1-o1-f2'}],
- *   out2: [{f1: 'out2-o1-f1'}, {f1: 'out2-o1-f2'}]
- * }
- * @param config
- * [
- *   {
- *     dataName: 'out1',
- *     path: './out.xlsx',
- *     sheetName: 'Sheet1' // omit to use the dataName as default
- *   }
- * ]
- *
- */
-const map2xlsx = function (data, config) {
-    if (!Array.isArray(config)) {
-        throw 'map2xlsx.config is not an array'
-    }
-    const workbookMap = {}
-    config.forEach(c => {
-        if (!c.dataName) {
-            throw 'map2xlsx.config.dataName is missing'
-        }
-        if (!c.path) {
-            throw 'map2xlsx.config.path is missing'
-        }
-        if (!data[c.dataName]) {
-            throw sprintf('map2xlsx.data.%s is missing', c.dataName)
-        }
-        // get it from the map or create a new one
-        let workbook = workbookMap[c.path] || XLSX.utils.book_new()
-        workbookMap[c.path] = workbook
-
-        let worksheet = XLSX.utils.json_to_sheet(data[c.dataName])
-        XLSX.utils.book_append_sheet(workbook, worksheet, c.sheetName || c.dataName)
-    })
-    for (let path in workbookMap) {
-        let workbook = workbookMap[path]
-        XLSX.writeFile(workbook, path)
-    }
-}
 
 exports.map = map
-exports.xlsx2map = xlsx2map
-exports.map2xlsx = map2xlsx
