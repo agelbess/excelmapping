@@ -36,6 +36,13 @@ const newCollections = function () {
     }
 }
 
+describe('test mapYamlFile', () => {
+    it('test', () => {
+        let collections = m.mapYamlFile('./test/mapYamlFile.yaml', newCollections())
+        assert.strictEqual(collections.copied.length, 2)
+    })
+})
+
 describe('test load', () => {
     it('test', () => {
         const config = {
@@ -46,8 +53,7 @@ describe('test load', () => {
                 }
             }]
         }
-        let collections = {}
-        m.map(collections, config)
+        let collections = m.map(config)
         assert.strictEqual(collections['Gods in English'].length, 14)
     })
 
@@ -62,7 +68,7 @@ describe('test load', () => {
             }]
         }
         let collections = {}
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in1.length, 14)
     })
 })
@@ -75,14 +81,14 @@ describe('test save', () => {
             jobs: [{save: {path: filepath}}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
 
         let loadCollections = {}
         const loadConfig = {
             name: 'in1',
             jobs: [{load: {path: filepath}}]
         }
-        m.map(loadCollections, loadConfig)
+        m.map(loadConfig, loadCollections)
         assert.strictEqual(loadCollections.in1.length, 2)
     })
 
@@ -93,14 +99,14 @@ describe('test save', () => {
             jobs: [{save: {path: filepath, sheetName: 'out1'}}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
 
         let loadCollections = {}
         const loadConfig = {
             name: 'out1',
             jobs: [{load: {path: filepath}}]
         }
-        m.map(loadCollections, loadConfig)
+        m.map(loadConfig, loadCollections)
         assert.strictEqual(loadCollections.out1.length, 2)
     })
 })
@@ -112,7 +118,7 @@ describe('test copyTo', () => {
             jobs: [{copyTo: 'out1'}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.out1.length, 2)
         assert.strictEqual(collections.out1[0].f1, 'in1-o1-f1')
         assert.strictEqual(collections.out1[1].f1, 'in1-o2-f1')
@@ -124,7 +130,7 @@ describe('test copyTo', () => {
             {name: 'in2', jobs: [{copyTo: 'out1'}]}
         ]
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.out1.length, 4)
         assert.strictEqual(collections.out1[0].f1, 'in1-o1-f1')
         assert.strictEqual(collections.out1[1].f1, 'in1-o2-f1')
@@ -142,7 +148,7 @@ describe('test cloneObjects', () => {
             }]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in3.length, 6 + 2 + 2)
     })
 })
@@ -159,7 +165,7 @@ describe('test filterObjects', () => {
             }]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in3.length, 1)
     })
 
@@ -173,7 +179,7 @@ describe('test filterObjects', () => {
             }]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in3.length, 4)
     })
 })
@@ -185,7 +191,7 @@ describe('test filterFields', () => {
             jobs: [{filterFields: {include: ['f1', 'f3']}}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in4[0].f1, 'in4-o1-f1')
         assert.strictEqual(collections.in4[0].f2, undefined)
         assert.strictEqual(collections.in4[0].f3, 'in4-o1-f3')
@@ -197,7 +203,7 @@ describe('test filterFields', () => {
             jobs: [{filterFields: {exclude: ['f1', 'f3']}}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in4[0].f1, undefined)
         assert.strictEqual(collections.in4[0].f2, 'in4-o1-f2')
         assert.strictEqual(collections.in4[0].f3, undefined)
@@ -210,7 +216,7 @@ describe('test mapFields', () => {
             name: 'in4', jobs: [{mapFields: {f2: 's2'}}]
         }
         let collections = newCollections()
-        m.map(collections, config)
+        m.map(config, collections)
         assert.strictEqual(collections.in4[0].f1, 'in4-o1-f1')
         assert.strictEqual(collections.in4[0].f2, undefined)
         assert.strictEqual(collections.in4[0].s2, 'in4-o1-f2')

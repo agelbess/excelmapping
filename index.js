@@ -5,7 +5,24 @@ const YAML = require('yaml')
 const sprintf = require('sprintf-js').sprintf
 
 /**
- * @param collections
+ *
+ * @param filepath the path of the YAML file containing the config
+ * @param collections optional
+ */
+const mapYamlFile = function(filepath, collections) {
+    return mapYaml(fs.readFileSync(filepath, 'utf8'), collections)
+}
+
+/**
+ *
+ * @param yaml string containing containing the config in yaml format
+ * @param collections optional
+ */
+const mapYaml = function(yaml, collections) {
+    return map(YAML.parse(yaml), collections)
+}
+/**
+ * @param collections (optional)
  * collections: {
  *     in1: [
  *       {f1: 'in1-o1-f1'},
@@ -31,36 +48,37 @@ const sprintf = require('sprintf-js').sprintf
  *   }
  * ]
  */
-const map = function (collections, config) {
+const map = function (config, collections) {
+    collections = collections || {}
     if (typeof collections !== 'object' || Array.isArray(collections)) {
         throw 'map.collections is not an object'
     }
     if (Array.isArray(config)) {
         config.forEach(c => {
-            map(collections, c)
+            map(c, collections)
         })
     } else {
         config.jobs.forEach(job => {
             if (job.load) {
-                load(collections, config.name, job.load)
+                load(job.load, collections, config.name)
             }
             if (job.save) {
-                save(collections, config.name, job.save)
+                save(job.save, collections, config.name)
             }
             if (job.copyTo) {
-                copyTo(collections, config.name, job.copyTo)
+                copyTo(job.copyTo, collections, config.name)
             }
             if (job.cloneObjects) {
-                cloneObjects(collections, config.name, job.cloneObjects)
+                cloneObjects(job.cloneObjects, collections, config.name)
             }
             if (job.filterObjects) {
-                filterObjects(collections, config.name, job.filterObjects)
+                filterObjects(job.filterObjects, collections, config.name)
             }
             if (job.filterFields) {
-                filterFields(collections, config.name, job.filterFields)
+                filterFields(job.filterFields, collections, config.name)
             }
             if (job.mapFields) {
-                mapFields(collections, config.name, job.mapFields)
+                mapFields(job.mapFields, collections, config.name)
             }
         })
     }
@@ -75,7 +93,7 @@ const map = function (collections, config) {
  *   rangeTo: if set, override the ending range of the sheet. e.g. 'E18' will stop reading after the E18 cell
  * }
  */
-const load = function (collections, collectionName, config) {
+const load = function (config, collections, collectionName) {
     if (!config.path) {
         throw sprintf('map.config.%s.load.path is missing', collectionName)
     }
@@ -99,7 +117,7 @@ const load = function (collections, collectionName, config) {
  * }
  *
  */
-const save = function (collections, collectionName, config) {
+const save = function (config, collections, collectionName) {
     const workbookMap = {}
     if (!config.path) {
         throw 'save.path is missing'
@@ -117,7 +135,7 @@ const save = function (collections, collectionName, config) {
 /**
  * copyTo: 'out1' // copy `in1` collection into `out1`
  */
-const copyTo = function (collections, collectionName, config) {
+const copyTo = function (config, collections, collectionName) {
     let source = collections[collectionName]
     collections[config] = collections[config] || []
     let target = collections[config]
@@ -133,7 +151,7 @@ const copyTo = function (collections, collectionName, config) {
  *   values: ['in1-o1-f1-clone1', 'in1-o1-f1-clone2'] // clone as many times as the values
  * }
  */
-const cloneObjects = function (collections, collectionName, config) {
+const cloneObjects = function (config, collections, collectionName) {
     if (!collections[collectionName]) {
         throw sprintf('map.data.%s is missing', collectionName)
     }
@@ -166,7 +184,7 @@ const cloneObjects = function (collections, collectionName, config) {
  * ]
  */
 
-const filterObjects = function (collections, collectionName, config) {
+const filterObjects = function (config, collections, collectionName) {
     if (!collections[collectionName]) {
         throw sprintf('map.data.%s is missing', collectionName)
     }
@@ -204,7 +222,7 @@ const filterObjects = function (collections, collectionName, config) {
  *   exclude: ['f1'] // include all the fields but the ones in the exclude array
  * }
  */
-const filterFields = function (collections, collectionName, config) {
+const filterFields = function (config, collections, collectionName) {
     if (!collections[collectionName]) {
         throw sprintf('map.data.%s is missing', collectionName)
     }
@@ -237,7 +255,7 @@ const filterFields = function (collections, collectionName, config) {
  *   f2: 's2'
  * }
  */
-const mapFields = function (collections, collectionName, config) {
+const mapFields = function (config, collections, collectionName) {
     if (!collections[collectionName]) {
         throw sprintf('data.%s is missing', collectionName)
     }
@@ -255,5 +273,6 @@ const mapFields = function (collections, collectionName, config) {
     }
 }
 
-
+exports.mapYamlFile = mapYamlFile
+exports.mapYaml = mapYaml
 exports.map = map

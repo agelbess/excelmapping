@@ -14,8 +14,7 @@ fs.mkdir(PATH, {recursive: true}, (err) => {
 describe('create a list of male Gods in English and in Greek', () => {
     it('test', () => {
 
-        let collections = {}
-        m.map(collections, [
+        m.map([
             // load the 2 sheets
             {
                 name: 'Gods in English',
@@ -48,7 +47,7 @@ describe('create a list of male Gods in English and in Greek', () => {
             jobs: [{load: {path: PATH + '/maleGodNames.xlsx'}}]
         }
         let loadCollections = {}
-        m.map(loadCollections, loadConfig)
+        m.map(loadConfig, loadCollections)
         assert.strictEqual(loadCollections['Male God names'].length, 8 + 8)
     })
 })
