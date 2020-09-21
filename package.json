@@ -1,6 +1,6 @@
 {
   "name": "excelmapping",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "mapping excel columns to other excel files with transformations and duplications",
   "main": "index.js",
   "scripts": {
